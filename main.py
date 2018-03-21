@@ -1,7 +1,7 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QMessageBox, QDesktopWidget
+from PyQt5.QtWidgets import QApplication, QWidget, QMessageBox, QDesktopWidget, QLineEdit, QVBoxLayout, QPushButton, QHBoxLayout
 from PyQt5.QtGui import QIcon
-
+from PyQt5.QtCore import *
 class prva(QWidget):
     
     def __init__(self):
@@ -9,10 +9,41 @@ class prva(QWidget):
         self.initUI()
     
     def initUI(self):
-        self.resize(700, 700)
+        self.resize(1000, 800)
         self.center()
         self.setWindowTitle('Browser')
         self.setWindowIcon(QIcon('web.png'))
+        
+        back = QPushButton('back')
+        forward = QPushButton('forward')
+        refresh = QPushButton('refresh')
+        home = QPushButton('home')
+        
+        settings = QPushButton('settings')
+        history = QPushButton('history')
+        bookmarks = QPushButton('bookmarks')
+        
+        addressBar = QLineEdit()
+        
+        hbox = QHBoxLayout()
+        
+        hbox.addWidget(back)
+        hbox.addWidget(forward)
+        hbox.addWidget(refresh)
+        hbox.addWidget(home)
+        hbox.addWidget(addressBar)   
+        hbox.addWidget(bookmarks)
+        hbox.addWidget(history)
+        hbox.addWidget(settings)        
+        
+        
+        
+        
+        vbox = QVBoxLayout()
+        vbox.addLayout(hbox)
+        vbox.setAlignment(Qt.AlignTop)
+        
+        self.setLayout(vbox)
         
         self.show()
     
