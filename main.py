@@ -41,6 +41,7 @@ class Browser(QWidget):
         
         self.__controls()
         self.__layout()
+        self.buttonStyle()
         _layout.addLayout(self.hbox)
         
         self.homePage = QUrl('https://www.google.com')
@@ -105,11 +106,47 @@ class Browser(QWidget):
                 link += '+' + l[i]
             self.web.load(QUrl(link))
         
+    def buttonStyle(self):
+        buttonStyle = 'QPushButton{border:none;}'
+        
+        self.back.setIcon(QIcon('back.png'))
+        self.back.setStyleSheet(buttonStyle); 
+        self.back.setIconSize(QSize(25, 25));
+        
+        self.forward.setIcon(QIcon('forward.png'))
+        self.forward.setStyleSheet(buttonStyle);
+        self.forward.setIconSize(QSize(25, 25))
+        
+        self.home.setIcon(QIcon('home.png'))
+        self.home.setStyleSheet(buttonStyle)
+        self.home.setIconSize(QSize(22, 22))
+        
+        self.refresh.setIcon(QIcon('refresh.png'))
+        self.refresh.setStyleSheet(buttonStyle)
+        self.refresh.setIconSize(QSize(22, 22))
+        
+        self.bookmarks.setIcon(QIcon('bookmarks.png'))
+        self.bookmarks.setStyleSheet(buttonStyle)
+        self.bookmarks.setIconSize(QSize(22, 22))
+        
+        self.history.setIcon(QIcon('history.png'))
+        self.history.setStyleSheet(buttonStyle)
+        self.history.setIconSize(QSize(22, 22))
+        
+        self.settings.setIcon(QIcon('settings.png'))
+        self.settings.setStyleSheet(buttonStyle)
+        self.settings.setIconSize(QSize(22, 22))
+        
+        buttonStyle = 'QPushButton{border:none;}'
+        self.go.setIcon(QIcon('search.png'))
+        self.go.setStyleSheet(buttonStyle)
+        self.go.setIconSize(QSize(22, 22))
+        
     def __controls(self):
-        self.back = QPushButton('back')
-        self.forward = QPushButton('forward')
-        self.refresh = QPushButton('refresh')
-        self.home = QPushButton('home')
+        self.back = QPushButton('')
+        self.forward = QPushButton('')
+        self.refresh = QPushButton('')
+        self.home = QPushButton('')
         self.settings = QPushButton('settings')
         self.history = QPushButton('history')
         self.bookmarks = QPushButton('bookmarks')
