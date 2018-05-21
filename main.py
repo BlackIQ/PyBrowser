@@ -17,59 +17,68 @@ class MainWindow(QMainWindow):
         
         tb = self.addToolBar("File")
         tb.setMovable(False)
-        backAction = QAction(QIcon('back.png'), 'Back', self)
-        backAction.setShortcut('Ctrl+Q')
-        backAction.triggered.connect(self.browser.page.backButtonPush)
+        self.backAction = QAction(QIcon('back.png'), 'Back', self)
+        self.backAction.setShortcut('Ctrl+Q')
+        self.backAction.triggered.connect(self.browser.page.backButtonPush)
 
-        forwardAction = QAction(QIcon('forward.png'), 'Forward', self)
-        forwardAction.setShortcut('Ctrl+Q')
-        forwardAction.triggered.connect(self.browser.page.forwardButtonPush)
+        self.forwardAction = QAction(QIcon('forward.png'), 'Forward', self)
+        self.forwardAction.setShortcut('Ctrl+Q')
+        self.forwardAction.triggered.connect(self.browser.page.forwardButtonPush)
 
-        refreshAction = QAction(QIcon('refresh.png'), 'Refresh', self)
-        refreshAction.setShortcut('Ctrl+Q')
-        refreshAction.triggered.connect(self.browser.page.refreshButtonPush)
+        self.refreshAction = QAction(QIcon('refresh.png'), 'Refresh', self)
+        self.refreshAction.setShortcut('Ctrl+Q')
+        self.refreshAction.triggered.connect(self.browser.page.refreshButtonPush)
 
-        homeAction = QAction(QIcon('home.png'), 'Home', self)
-        homeAction.setShortcut('Ctrl+Q')
-        homeAction.triggered.connect(self.browser.page.homeButtonPush)
+        self.homeAction = QAction(QIcon('home.png'), 'Home', self)
+        self.homeAction.setShortcut('Ctrl+Q')
+        self.homeAction.triggered.connect(self.browser.page.homeButtonPush)
         
-        addressBar = QLineEdit()
-        addressBar.setPlaceholderText('Search with Google or enter address')
-        addressBar.editingFinished.connect(lambda: self.browser.page.goButtonPush(addressBar.text()))
+        self.addressBar = QLineEdit()
+        self.addressBar.setPlaceholderText('Search with Google or enter address')
+        self.addressBar.editingFinished.connect(lambda: self.browser.page.goButtonPush(self.addressBar.text()))
         
-        goAction = QAction(QIcon('search.png'), 'Go', self)
-        goAction.setShortcut('Ctrl+Q')
-        goAction.triggered.connect(lambda: self.browser.page.goButtonPush(addressBar.text()))
+        self.goAction = QAction(QIcon('search.png'), 'Go', self)
+        self.goAction.setShortcut('Ctrl+Q')
+        self.goAction.triggered.connect(lambda: self.browser.page.goButtonPush(addressBar.text()))
         
                     
-        bookmarkAction = QAction(QIcon('star.png'), 'Add bookmark', self)
-        bookmarkAction.setShortcut('Ctrl+Q')
-        bookmarkAction.triggered.connect(self.browser.page.addBookmarkPush)
+        self.bookmarkAction = QAction(QIcon('star.png'), 'Add bookmark', self)
+        self.bookmarkAction.setShortcut('Ctrl+Q')
+        self.bookmarkAction.triggered.connect(self.browser.page.addBookmarkPush)
             
-        historyAction = QAction(QIcon('history.png'), 'History', self)
-        historyAction.setShortcut('Ctrl+Q')
-        historyAction.triggered.connect(self.browser.page.historyButtonPush)
+        self.historyAction = QAction(QIcon('history.png'), 'History', self)
+        self.historyAction.setShortcut('Ctrl+Q')
+        self.historyAction.triggered.connect(self.browser.page.historyButtonPush)
             
-        bookmarksAction = QAction(QIcon('bookmarks.png'), 'Bookmarks', self)
-        bookmarksAction.setShortcut('Ctrl+Q')
-        bookmarksAction.triggered.connect(self.browser.page.bookmarksButtonPush)
+        self.bookmarksAction = QAction(QIcon('bookmarks.png'), 'Bookmarks', self)
+        self.bookmarksAction.setShortcut('Ctrl+Q')
+        self.bookmarksAction.triggered.connect(self.browser.page.bookmarksButtonPush)
             
-        settingsAction = QAction(QIcon('settings.png'), 'Settings', self)
-        settingsAction.setShortcut('Ctrl+Q')
-        settingsAction.triggered.connect(self.browser.page.refreshButtonPush)
+        self.settingsAction = QAction(QIcon('settings.png'), 'Settings', self)
+        self.settingsAction.setShortcut('Ctrl+Q')
+        self.settingsAction.triggered.connect(self.browser.page.refreshButtonPush)
         
         
         
-        tb.addAction(backAction)
-        tb.addAction(forwardAction)
-        tb.addAction(refreshAction)
-        tb.addAction(homeAction)
-        tb.addWidget(addressBar)
-        tb.addAction(goAction)
-        tb.addAction(bookmarkAction)
-        tb.addAction(historyAction)
-        tb.addAction(bookmarksAction)
-        tb.addAction(settingsAction)
+        tb.addAction(self.backAction)
+        tb.addAction(self.forwardAction)
+        tb.addAction(self.refreshAction)
+        tb.addAction(self.homeAction)
+        tb.addWidget(self.addressBar)
+        tb.addAction(self.goAction)
+        tb.addAction(self.bookmarkAction)
+        tb.addAction(self.historyAction)
+        tb.addAction(self.bookmarksAction)
+        tb.addAction(self.settingsAction)
+
+
+        fileMenu = self.menuBar().addMenu("&File")
+
+        self.newTabAction =  QAction(QIcon('star.png'), "New tab", self)
+        self.newTabAction.setStatusTip("Open a new tab")
+        self.newTabAction.triggered.connect(lambda _: self.browser.page.addNewTab()) 
+        
+        fileMenu.addAction(self.newTabAction)
         
         
     def createBrowser(self):
@@ -103,34 +112,50 @@ class Window(QGraphicsScene):
         
         _layout = QVBoxLayout(view)
 
+        self.view = view
         self.tabs = QTabWidget()
         self.tab1 = QWidget()	
         self.tab2 = QWidget()
         self.tabs.resize(300,200)
-       
-        self.tabs.addTab(self.tab1, "Tab 1")
-        self.tabs.addTab(self.tab2, "Tab 2")
-
+        self.tabs.setTabsClosable(True)
+        self.tabs.tabCloseRequested.connect(self.closeCurrentTab)
+      
+        self.addNewTab()
 
         self.setBackgroundBrush(QBrush(QColor(230, 230, 230), Qt.SolidPattern))
+        
+        self.searchHistory = self.tabs.currentWidget().page().history()
 
-        self.tab1.layout = QVBoxLayout()
-        self.tab1.setLayout(self.tab1.layout)
-
-        self.homePage = QUrl('https://www.google.com')
-        self.web = QWebView()
-        self.web.load(self.homePage)
-        self.web.setMinimumHeight(qApp.primaryScreen().size().height()-160)
-        
-        
-        self.tab1.layout.addWidget(self.web)
-        
-        self.searchHistory = self.web.page().history()
-        
-
-        self.tab1.layout.setAlignment(Qt.AlignTop)
         _layout.addWidget(self.tabs)
-        
+
+    def addNewTab(self):
+
+        qurl = QUrl('www.google.com')
+
+        web = QWebView()
+        web.load(QUrl("https://www.google.com"))
+        web.setMinimumHeight(qApp.primaryScreen().size().height()-160)
+
+        i = self.tabs.addTab(web, "Google")
+
+        self.tabs.setCurrentIndex(i)
+
+        web.urlChanged.connect(lambda qurl, web=web: self.update_urlbar(qurl, web))
+        web.loadFinished.connect(lambda _, i=i, web=web: self.tabs.setTabText(i, web.title()))
+
+    def update_urlbar(self, q, browser=None):
+
+        if browser != self.tabs.currentWidget():
+            return
+
+        self.view.parent().addressBar.setText(q.toString())
+
+
+    def closeCurrentTab(self, i):
+        if self.tabs.count() < 2:
+            return
+
+        self.tabs.removeTab(i) 
 # History Button
     def historyButtonPush(self):
         self.popUp = QListWidget()
@@ -339,14 +364,14 @@ class Window(QGraphicsScene):
             q.setScheme("http")
             
         if(tmp.find('.') != -1 and tmp.find(' ') == -1):
-            self.web.load(q)
+            self.tabs.currentWidget().load(q)
                 
         else:
             l = tmp.split()
             link = 'https://www.google.com/search?q=' + l[0]
             for i in range(1, len(l)):
                 link += '+' + l[i]
-            self.web.load(QUrl(link))
+            self.tabs.currentWidget().load(QUrl(link))
         
   
 
