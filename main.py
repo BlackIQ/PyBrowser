@@ -19,44 +19,44 @@ class MainWindow(QMainWindow):
         tb.setMovable(False)
         backAction = QAction(QIcon('back.png'), 'Back', self)
         backAction.setShortcut('Ctrl+Q')
-        backAction.triggered.connect(self.browser.page1.backButtonPush)
+        backAction.triggered.connect(self.browser.page.backButtonPush)
 
         forwardAction = QAction(QIcon('forward.png'), 'Forward', self)
         forwardAction.setShortcut('Ctrl+Q')
-        forwardAction.triggered.connect(self.browser.page1.forwardButtonPush)
+        forwardAction.triggered.connect(self.browser.page.forwardButtonPush)
 
         refreshAction = QAction(QIcon('refresh.png'), 'Refresh', self)
         refreshAction.setShortcut('Ctrl+Q')
-        refreshAction.triggered.connect(self.browser.page1.refreshButtonPush)
+        refreshAction.triggered.connect(self.browser.page.refreshButtonPush)
 
         homeAction = QAction(QIcon('home.png'), 'Home', self)
         homeAction.setShortcut('Ctrl+Q')
-        homeAction.triggered.connect(self.browser.page1.homeButtonPush)
+        homeAction.triggered.connect(self.browser.page.homeButtonPush)
         
         addressBar = QLineEdit()
         addressBar.setPlaceholderText('Search with Google or enter address')
-        addressBar.editingFinished.connect(lambda: self.browser.page1.goButtonPush(addressBar.text()))
+        addressBar.editingFinished.connect(lambda: self.browser.page.goButtonPush(addressBar.text()))
         
         goAction = QAction(QIcon('search.png'), 'Go', self)
         goAction.setShortcut('Ctrl+Q')
-        goAction.triggered.connect(lambda: self.browser.page1.goButtonPush(addressBar.text()))
+        goAction.triggered.connect(lambda: self.browser.page.goButtonPush(addressBar.text()))
         
                     
         bookmarkAction = QAction(QIcon('star.png'), 'Add bookmark', self)
         bookmarkAction.setShortcut('Ctrl+Q')
-        bookmarkAction.triggered.connect(self.browser.page1.addBookmarkPush)
+        bookmarkAction.triggered.connect(self.browser.page.addBookmarkPush)
             
         historyAction = QAction(QIcon('history.png'), 'History', self)
         historyAction.setShortcut('Ctrl+Q')
-        historyAction.triggered.connect(self.browser.page1.historyButtonPush)
+        historyAction.triggered.connect(self.browser.page.historyButtonPush)
             
         bookmarksAction = QAction(QIcon('bookmarks.png'), 'Bookmarks', self)
         bookmarksAction.setShortcut('Ctrl+Q')
-        bookmarksAction.triggered.connect(self.browser.page1.bookmarksButtonPush)
+        bookmarksAction.triggered.connect(self.browser.page.bookmarksButtonPush)
             
         settingsAction = QAction(QIcon('settings.png'), 'Settings', self)
         settingsAction.setShortcut('Ctrl+Q')
-        settingsAction.triggered.connect(self.browser.page1.refreshButtonPush)
+        settingsAction.triggered.connect(self.browser.page.refreshButtonPush)
         
         
         
@@ -92,8 +92,8 @@ class Browser(QGraphicsView):
 
     def __init__(self, parent):
         super(Browser, self).__init__(parent)
-        self.page1 = Window(self)
-        self.setScene(self.page1)
+        self.page = Window(self)
+        self.setScene(self.page)
         
 
 class Window(QGraphicsScene):
@@ -130,7 +130,8 @@ class Window(QGraphicsScene):
 
         self.tab1.layout.setAlignment(Qt.AlignTop)
         _layout.addWidget(self.tabs)
-
+        
+# History Button
     def historyButtonPush(self):
         self.popUp = QListWidget()
         
@@ -143,6 +144,7 @@ class Window(QGraphicsScene):
         self.popUp.setMinimumSize(400, 400)
         
         self.popUp.itemActivated.connect(self.doubleClickHistory)
+        self.popUp.itemClicked.connect(self.showHistoryRightClick)
         self.popUp.show()
         
     def doubleClickHistory(self, item):
@@ -150,76 +152,135 @@ class Window(QGraphicsScene):
             if(self.searchHistory.itemAt(i).title() == item.text()):
                 self.web.load(self.searchHistory.itemAt(i).originalUrl())
                 break
+    
+    def showHistoryRightClick(self, item):
+        
+        self.popUp.setContextMenuPolicy(Qt.CustomContextMenu)
+        
+        self.historyRightClickMenu = QMenu()
+        
+        self.item = item
+        
+        menuItem = self.historyRightClickMenu.addAction('Open')
+        menuItem.triggered.connect(self.openHistory)
+        
+        menuItem = self.historyRightClickMenu.addAction('Open in a New Tab')
+        
+        menuItem = self.historyRightClickMenu.addAction('Bookmark page')
+        
+        menuItem = self.historyRightClickMenu.addAction('Delete page')
+        
+        self.popUp.customContextMenuRequested.connect(self.showHistoryRightClickMenu)
+    
+    
+    def showHistoryRightClickMenu(self, QPos):
+        parentPosition = self.popUp.mapToGlobal(QPoint(0, 0))        
+        menuPosition = parentPosition + QPos
+        self.historyRightClickMenu.move(menuPosition)
+        self.historyRightClickMenu.show() 
+        
+    
+    def openHistory(self):
+        for i in range(0, self.searchHistory.count()):
+            if(self.searchHistory.itemAt(i).title() == self.item.text()):
+                self.web.load(self.searchHistory.itemAt(i).originalUrl())
+                break
+#############################################
+
+# Bookmark Button
         
     def bookmarksButtonPush(self):
         self.popUp = QListWidget()
-        
-        self.popUp.setWindowTitle('Bookmarks')
-        self.popUp.setMinimumSize(400, 400)
-        
-        layout = QVBoxLayout()
-        
-        self.button = QPushButton('Delete mode')
-        self.clicked = 0
-        layout.addWidget(self.button)
-        
-        self.button.setFixedWidth(150)
-        
-        layout.setAlignment(Qt.AlignBottom | Qt.AlignCenter)
-        
-        self.popUp.setLayout(layout)
         
         file = open('bookmarks.txt', 'r')
         
         for line in file:
             list = line.split(';')
             url = QUrl(list[1])
-            print(url.toString())
             icon = QWebSettings.iconForUrl(url)
             self.popUp.addItem(QListWidgetItem(icon, list[0].strip()))
         
-        self.button.clicked.connect(self.bookmarksButtonPushDelete)
+        
+        self.popUp.setWindowTitle('Bookmarks')
+        self.popUp.setMinimumSize(400, 400)
+        
+        self.popUp.itemClicked.connect(self.showBookmarkRightClick)
+        
         self.popUp.itemActivated.connect(self.doubleClickBookmark)
         
         self.popUp.show()
         
         file.close()
         
-    def bookmarksButtonPushDelete(self):
-        if(self.clicked == 0):
-            self.clicked = 1
-            self.button.setText('Back to bookmarks')
-        else:
-            self.clicked = 0
-            self.button.setText('Delete mode')
         
         
     def doubleClickBookmark(self, item):
         file = open('bookmarks.txt', 'r')
         
-        if(self.clicked == 0):
-            for line in file:
-                list = line.split(';')
-                if(list[0].strip() == item.text().strip()):
-                    q = QUrl(list[1].strip())
-                    if(q.scheme() == ""):
-                        q.setScheme("http")
-                    self.web.load(q)
-                    break
-        else:
-            lines = file.readlines()
-            file.close()
-            file = open('bookmarks.txt', 'w')
-            for line in lines:
-                list = line.split(';')
-                if(list[0].strip() != item.text().strip()):
-                    file.write(line)
-            item.setHidden(True)
+        for line in file:
+            list = line.split(';')
+            if(list[0].strip() == item.text().strip()):
+                q = QUrl(list[1].strip())
+                if(q.scheme() == ""):
+                    q.setScheme("http")
+                self.web.load(q)
     
         file.close()
         
+    def showBookmarkRightClick(self, item):
+        
+        self.popUp.setContextMenuPolicy(Qt.CustomContextMenu)
+        
+        self.bookmarkRightClickMenu = QMenu()
+        
+        self.item = item
+        menuItem = self.bookmarkRightClickMenu.addAction('Open')
+        menuItem.triggered.connect(self.openBookmark)
+        
+        menuItem = self.bookmarkRightClickMenu.addAction('Open in a New Tab')
+        
+        menuItem = self.bookmarkRightClickMenu.addAction('Delete bookmark')
+        menuItem.triggered.connect(self.deleteBookmark)
+        
+        self.popUp.customContextMenuRequested.connect(self.showBookmarkRightClickMenu)
+    
+    
+    def showBookmarkRightClickMenu(self, QPos):
+        parentPosition = self.popUp.mapToGlobal(QPoint(0, 0))        
+        menuPosition = parentPosition + QPos
+        self.bookmarkRightClickMenu.move(menuPosition)
+        self.bookmarkRightClickMenu.show() 
+        
+    def openBookmark(self):
+        file = open('bookmarks.txt', 'r')
+        
+        for line in file:
+            list = line.split(';')
+            if(list[0].strip() == self.item.text().strip()):
+                q = QUrl(list[1].strip())
+                if(q.scheme() == ""):
+                    q.setScheme("http")
+                self.web.load(q)
+    
+        file.close()
+        
+    def deleteBookmark(self):
+        file = open('bookmarks.txt', 'r')
+        
+        lines = file.readlines()
+        file.close()
+        file = open('bookmarks.txt', 'w')
+        for line in lines:
+            list = line.split(';')
+            if(list[0].strip() != self.item.text().strip()):
+                file.write(line)
+        self.item.setHidden(True)
+    
+        file.close()
+#################################################
 
-
+# AddBookmark Button
+    
     def addBookmarkPush(self):
         self.popUp = QDialog()
         layout = QVBoxLayout()
@@ -252,6 +313,7 @@ class Window(QGraphicsScene):
             self.popUp.close()
             
         file.close()
+###########################################
         
 
     def forwardButtonPush(self):
