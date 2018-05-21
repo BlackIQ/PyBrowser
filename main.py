@@ -18,19 +18,19 @@ class MainWindow(QMainWindow):
         tb = self.addToolBar("File")
         tb.setMovable(False)
         self.backAction = QAction(QIcon('back.png'), 'Back', self)
-        self.backAction.setShortcut('Ctrl+Q')
+        self.backAction.setShortcut('Ctrl+B')
         self.backAction.triggered.connect(self.browser.page.backButtonPush)
 
         self.forwardAction = QAction(QIcon('forward.png'), 'Forward', self)
-        self.forwardAction.setShortcut('Ctrl+Q')
+        self.forwardAction.setShortcut('Ctrl+F')
         self.forwardAction.triggered.connect(self.browser.page.forwardButtonPush)
 
         self.refreshAction = QAction(QIcon('refresh.png'), 'Refresh', self)
-        self.refreshAction.setShortcut('Ctrl+Q')
+        self.refreshAction.setShortcut('Ctrl+R')
         self.refreshAction.triggered.connect(self.browser.page.refreshButtonPush)
 
         self.homeAction = QAction(QIcon('home.png'), 'Home', self)
-        self.homeAction.setShortcut('Ctrl+Q')
+        self.homeAction.setShortcut('Ctrl+H')
         self.homeAction.triggered.connect(self.browser.page.homeButtonPush)
         
         self.addressBar = QLineEdit()
@@ -38,24 +38,24 @@ class MainWindow(QMainWindow):
         self.addressBar.editingFinished.connect(lambda: self.browser.page.goButtonPush(self.addressBar.text()))
         
         self.goAction = QAction(QIcon('search.png'), 'Go', self)
-        self.goAction.setShortcut('Ctrl+Q')
-        self.goAction.triggered.connect(lambda: self.browser.page.goButtonPush(addressBar.text()))
+        self.goAction.setShortcut('Ctrl+S')
+        self.goAction.triggered.connect(lambda: self.browser.page.goButtonPush(self.addressBar.text()))
         
                     
         self.bookmarkAction = QAction(QIcon('star.png'), 'Add bookmark', self)
-        self.bookmarkAction.setShortcut('Ctrl+Q')
+        self.bookmarkAction.setShortcut('Ctrl+B')
         self.bookmarkAction.triggered.connect(self.browser.page.addBookmarkPush)
             
         self.historyAction = QAction(QIcon('history.png'), 'History', self)
-        self.historyAction.setShortcut('Ctrl+Q')
+        self.historyAction.setShortcut('Ctrl+H')
         self.historyAction.triggered.connect(self.browser.page.historyButtonPush)
             
         self.bookmarksAction = QAction(QIcon('bookmarks.png'), 'Bookmarks', self)
-        self.bookmarksAction.setShortcut('Ctrl+Q')
+        self.bookmarksAction.setShortcut('Ctrl+V')
         self.bookmarksAction.triggered.connect(self.browser.page.bookmarksButtonPush)
             
         self.settingsAction = QAction(QIcon('settings.png'), 'Settings', self)
-        self.settingsAction.setShortcut('Ctrl+Q')
+        self.settingsAction.setShortcut('Ctrl+O')
         self.settingsAction.triggered.connect(self.browser.page.refreshButtonPush)
         
         
@@ -118,6 +118,7 @@ class Window(QGraphicsScene):
         self.tab2 = QWidget()
         self.tabs.resize(300,200)
         self.tabs.setTabsClosable(True)
+        self.tabs.currentChanged.connect(self.currentTabChanged)
         self.tabs.tabCloseRequested.connect(self.closeCurrentTab)
       
         self.addNewTab()
@@ -148,8 +149,19 @@ class Window(QGraphicsScene):
         if browser != self.tabs.currentWidget():
             return
 
-        self.view.parent().addressBar.setText(q.toString())
+        #addressBar.setText(q.toString()) TODO Dohvatiti addressBar iz toolbara. Ne znam kako da dohvatim
 
+    def currentTabChanged(self, i):
+        qurl = self.tabs.currentWidget().url()
+        self.update_urlbar(qurl, self.tabs.currentWidget())
+        self.updateTitle(self.tabs.currentWidget())
+
+    def updateTitle(self, browser):
+        if browser != self.tabs.currentWidget():
+            return
+
+        title = self.tabs.currentWidget().title()
+        self.view.parent().setWindowTitle(title)
 
     def closeCurrentTab(self, i):
         if self.tabs.count() < 2:
@@ -175,7 +187,7 @@ class Window(QGraphicsScene):
     def doubleClickHistory(self, item):
         for i in range(0, self.searchHistory.count()):
             if(self.searchHistory.itemAt(i).title() == item.text()):
-                self.web.load(self.searchHistory.itemAt(i).originalUrl())
+                self.tabs.currentWidget().load(self.searchHistory.itemAt(i).originalUrl())
                 break
     
     def showHistoryRightClick(self, item):
@@ -208,7 +220,7 @@ class Window(QGraphicsScene):
     def openHistory(self):
         for i in range(0, self.searchHistory.count()):
             if(self.searchHistory.itemAt(i).title() == self.item.text()):
-                self.web.load(self.searchHistory.itemAt(i).originalUrl())
+                self.tabs.currentWidget().load(self.searchHistory.itemAt(i).originalUrl())
                 break
 #############################################
 
@@ -248,7 +260,7 @@ class Window(QGraphicsScene):
                 q = QUrl(list[1].strip())
                 if(q.scheme() == ""):
                     q.setScheme("http")
-                self.web.load(q)
+                self.tabs.currentWidget().load(q)
     
         file.close()
         
@@ -285,7 +297,7 @@ class Window(QGraphicsScene):
                 q = QUrl(list[1].strip())
                 if(q.scheme() == ""):
                     q.setScheme("http")
-                self.web.load(q)
+                self.tabs.currentWidget().load(q)
     
         file.close()
         
@@ -334,7 +346,7 @@ class Window(QGraphicsScene):
                 return
         
         if(self.add.text().strip() != ''):
-            file.write(self.add.text() + ';' + self.web.url().toString() + '\n')
+            file.write(self.add.text() + ';' + self.tabs.currentWidget.url().toString() + '\n')
             self.popUp.close()
             
         file.close()
@@ -348,10 +360,10 @@ class Window(QGraphicsScene):
         self.searchHistory.back()
 
     def refreshButtonPush(self):
-        self.web.reload()
+        self.tabs.currentWidget().reload()
 
     def homeButtonPush(self):
-        self.web.load(self.homePage)
+        self.tabs.currentWidget().load(self.homePage)
 
     def goButtonPush(self, address):
         tmp = address
