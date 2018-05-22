@@ -35,10 +35,9 @@ class MainWindow(QMainWindow):
         
         self.addressBar = QLineEdit()
         self.addressBar.setPlaceholderText('Search with Google or enter address')
-        self.addressBar.editingFinished.connect(lambda: self.browser.page.goButtonPush(self.addressBar.text()))
         
         self.goAction = QAction(QIcon('search.png'), 'Go', self)
-        self.goAction.setShortcut('Ctrl+S')
+        self.goAction.setShortcut(Qt.Key_Return)
         self.goAction.triggered.connect(lambda: self.browser.page.goButtonPush(self.addressBar.text()))
         
                     
@@ -53,10 +52,6 @@ class MainWindow(QMainWindow):
         self.bookmarksAction = QAction(QIcon('bookmarks.png'), 'Bookmarks', self)
         self.bookmarksAction.setShortcut('Ctrl+V')
         self.bookmarksAction.triggered.connect(self.browser.page.bookmarksButtonPush)
-            
-        self.settingsAction = QAction(QIcon('settings.png'), 'Settings', self)
-        self.settingsAction.setShortcut('Ctrl+O')
-        self.settingsAction.triggered.connect(self.browser.page.refreshButtonPush)
         
         
         
@@ -69,16 +64,7 @@ class MainWindow(QMainWindow):
         tb.addAction(self.bookmarkAction)
         tb.addAction(self.historyAction)
         tb.addAction(self.bookmarksAction)
-        tb.addAction(self.settingsAction)
 
-
-        fileMenu = self.menuBar().addMenu("&File")
-
-        self.newTabAction =  QAction(QIcon('star.png'), "New tab", self)
-        self.newTabAction.setStatusTip("Open a new tab")
-        self.newTabAction.triggered.connect(lambda _: self.browser.page.addNewTab()) 
-        
-        fileMenu.addAction(self.newTabAction)
         
         
     def createBrowser(self):
@@ -86,7 +72,15 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.browser)
         
         
-    def closeEvent(self, event):
+    def closeEvent(self, event):  
+        
+        file = open('history.txt', 'a+')
+        
+        for i in self.browser.page.searchHistory.items():
+            file.write(''.join((i.title(), ';', i.originalUrl().toString(), '\n')).encode('utf-8'))
+            
+        file.close()
+        
         reply = QMessageBox.question(self, 'Confirm close',
         "You are about to exit. Are you sure you want to continue?", QMessageBox.Yes | 
         QMessageBox.No, QMessageBox.Yes)
@@ -114,14 +108,17 @@ class Window(QGraphicsScene):
 
         self.view = view
         self.tabs = QTabWidget()
-        self.tab1 = QWidget()	
-        self.tab2 = QWidget()
         self.tabs.resize(300,200)
         self.tabs.setTabsClosable(True)
         self.tabs.currentChanged.connect(self.currentTabChanged)
         self.tabs.tabCloseRequested.connect(self.closeCurrentTab)
       
         self.addNewTab()
+    
+        button = QPushButton(QIcon('plus.png'), '')
+        button.setStatusTip('Open a new tab')
+        button.clicked.connect(lambda _: self.addNewTab()) 
+        self.tabs.setCornerWidget(button, Qt.TopLeftCorner)
 
         self.setBackgroundBrush(QBrush(QColor(230, 230, 230), Qt.SolidPattern))
         
@@ -172,23 +169,43 @@ class Window(QGraphicsScene):
     def historyButtonPush(self):
         self.popUp = QListWidget()
         
+        file = open('history.txt', 'r')
+        
+        for line in file:
+            list = line.split(';')
+            url = QUrl(list[1])
+            icon = QWebSettings.iconForUrl(url)
+            self.popUp.addItem(QListWidgetItem(icon, list[0].strip() + '  -  ' + list[1].strip()))
+            
+        file.close()
+        
         for h in self.searchHistory.items():
             url = h.originalUrl()
             icon = QWebSettings.iconForUrl(url)
-            self.popUp.addItem(QListWidgetItem(icon, h.title()))
+            self.popUp.addItem(QListWidgetItem(icon, h.title() + '  -  ' + url.toString()))
             
         self.popUp.setWindowTitle('History')
         self.popUp.setMinimumSize(400, 400)
+        
+        button = QPushButton('Delete History')
+        button.clicked.connect(self.deleteAllHistory)
+        
+        layout = QVBoxLayout()
+        layout.addWidget(button)
+        layout.setAlignment(Qt.AlignBottom)
+        self.popUp.setLayout(layout)
         
         self.popUp.itemActivated.connect(self.doubleClickHistory)
         self.popUp.itemClicked.connect(self.showHistoryRightClick)
         self.popUp.show()
         
     def doubleClickHistory(self, item):
-        for i in range(0, self.searchHistory.count()):
-            if(self.searchHistory.itemAt(i).title() == item.text()):
-                self.tabs.currentWidget().load(self.searchHistory.itemAt(i).originalUrl())
-                break
+        list = item.text().split('  -  ')
+        self.tabs.currentWidget().load(QUrl(list[1]))
+        
+        print(list[1])
+        
+        self.popUp.close()
     
     def showHistoryRightClick(self, item):
         
@@ -202,13 +219,28 @@ class Window(QGraphicsScene):
         menuItem.triggered.connect(self.openHistory)
         
         menuItem = self.historyRightClickMenu.addAction('Open in a New Tab')
+        menuItem.triggered.connect(self.openHistoryInNewTab)
         
         menuItem = self.historyRightClickMenu.addAction('Bookmark page')
+        menuItem.triggered.connect(self.addBookmarkFromHistory)
         
         menuItem = self.historyRightClickMenu.addAction('Delete page')
+        menuItem.triggered.connect(self.deleteHistory)
         
         self.popUp.customContextMenuRequested.connect(self.showHistoryRightClickMenu)
     
+    def deleteAllHistory(self):
+        file = open('history.txt', 'r')
+        
+        lines = file.readlines()
+        file.close()
+        
+        file = open('history.txt', 'w')
+        for line in lines:
+            file.write('')
+        file.close()
+        
+        self.popUp.close()
     
     def showHistoryRightClickMenu(self, QPos):
         parentPosition = self.popUp.mapToGlobal(QPoint(0, 0))        
@@ -218,10 +250,75 @@ class Window(QGraphicsScene):
         
     
     def openHistory(self):
-        for i in range(0, self.searchHistory.count()):
-            if(self.searchHistory.itemAt(i).title() == self.item.text()):
-                self.tabs.currentWidget().load(self.searchHistory.itemAt(i).originalUrl())
-                break
+        list = item.text().split('  -  ')
+        self.tabs.currentWidget().load(QUrl(list[1]))
+        
+        print(list[1])
+            
+        self.popUp.close()
+        
+    def openHistoryInNewTab(self):
+        list = self.item.text().split('  -  ')
+        q = QUrl(list[1])
+        
+        web = QWebView()
+        web.load(q)
+        web.setMinimumHeight(qApp.primaryScreen().size().height()-160)
+
+        i = self.tabs.addTab(web, "Google")
+
+        self.tabs.setCurrentIndex(i)
+
+        web.urlChanged.connect(lambda qurl, web=web: self.update_urlbar(qurl, web))
+        web.loadFinished.connect(lambda _, i=i, web=web: self.tabs.setTabText(i, web.title()))
+        
+        self.popUp.close()
+        
+    def deleteHistory(self):
+        file = open('history.txt', 'r')
+        
+        lines = file.readlines()
+        file.close()
+        file = open('history.txt', 'w')
+        for line in lines:
+            list = line.split(';')
+            if(list[0].strip() != self.item.text().strip()):
+                file.write(line)
+        self.item.setHidden(True)
+    
+        file.close()
+        
+    def addBookmarkFromHistory(self):
+        self.popUp = QDialog()
+        layout = QVBoxLayout()
+        
+        button = QPushButton('Done')
+        self.add = QLineEdit()
+        
+        layout.addWidget(self.add)
+        layout.addWidget(button)
+        
+        self.popUp.setLayout(layout)
+        
+        button.clicked.connect(self.addBokmark)
+        
+        self.popUp.setWindowTitle('Page Bookmarked')
+        self.popUp.setMaximumSize(300, 200)
+        
+        self.popUp.show()
+        
+    def bookmarkPage(self):
+        file = open('bookmarks.txt', 'a+')
+        
+        list = item.text().split('  -  ')
+        for line in file:
+            if(list[0] == self.add.text()):
+                return
+        
+        if(self.add.text().strip() != ''):
+            file.write(''.join((self.add.text().strip(), ';', list[1].strip(), '\n')).encode('utf-8'))
+            
+        file.close()
 #############################################
 
 # Bookmark Button
@@ -250,7 +347,6 @@ class Window(QGraphicsScene):
         file.close()
         
         
-        
     def doubleClickBookmark(self, item):
         file = open('bookmarks.txt', 'r')
         
@@ -263,6 +359,7 @@ class Window(QGraphicsScene):
                 self.tabs.currentWidget().load(q)
     
         file.close()
+        self.popUp.close()
         
     def showBookmarkRightClick(self, item):
         
@@ -275,6 +372,7 @@ class Window(QGraphicsScene):
         menuItem.triggered.connect(self.openBookmark)
         
         menuItem = self.bookmarkRightClickMenu.addAction('Open in a New Tab')
+        menuItem.triggered.connect(self.openBookmarkInNewTab)
         
         menuItem = self.bookmarkRightClickMenu.addAction('Delete bookmark')
         menuItem.triggered.connect(self.deleteBookmark)
@@ -287,6 +385,34 @@ class Window(QGraphicsScene):
         menuPosition = parentPosition + QPos
         self.bookmarkRightClickMenu.move(menuPosition)
         self.bookmarkRightClickMenu.show() 
+        
+    def openBookmarkInNewTab(self):
+        
+        file = open('bookmarks.txt', 'r')
+        
+        global q
+        
+        for line in file:
+            list = line.split(';')
+            if(list[0].strip() == self.item.text().strip()):
+                q = QUrl(list[1].strip())
+                if(q.scheme() == ""):
+                    q.setScheme("http")
+    
+        file.close()
+        
+        web = QWebView()
+        web.load(q)
+        web.setMinimumHeight(qApp.primaryScreen().size().height()-160)
+
+        i = self.tabs.addTab(web, "Google")
+
+        self.tabs.setCurrentIndex(i)
+
+        web.urlChanged.connect(lambda qurl, web=web: self.update_urlbar(qurl, web))
+        web.loadFinished.connect(lambda _, i=i, web=web: self.tabs.setTabText(i, web.title()))
+        
+        self.popUp.close()
         
     def openBookmark(self):
         file = open('bookmarks.txt', 'r')
@@ -301,6 +427,8 @@ class Window(QGraphicsScene):
     
         file.close()
         
+        self.popUp.close()
+        
     def deleteBookmark(self):
         file = open('bookmarks.txt', 'r')
         
@@ -314,6 +442,7 @@ class Window(QGraphicsScene):
         self.item.setHidden(True)
     
         file.close()
+        
 #################################################
 
 # AddBookmark Button
@@ -346,7 +475,7 @@ class Window(QGraphicsScene):
                 return
         
         if(self.add.text().strip() != ''):
-            file.write(self.add.text() + ';' + self.tabs.currentWidget.url().toString() + '\n')
+            file.write(self.add.text() + ';' + self.tabs.currentWidget().url().toString() + '\n')
             self.popUp.close()
             
         file.close()
@@ -363,7 +492,7 @@ class Window(QGraphicsScene):
         self.tabs.currentWidget().reload()
 
     def homeButtonPush(self):
-        self.tabs.currentWidget().load(self.homePage)
+        self.tabs.currentWidget().load(QUrl('https://www.google.com/'))
 
     def goButtonPush(self, address):
         tmp = address
