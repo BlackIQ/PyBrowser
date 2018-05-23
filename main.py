@@ -13,6 +13,10 @@ class MainWindow(QMainWindow):
         
         self.setWindowTitle('Browser')
         self.setWindowIcon(QIcon('web.png'))
+
+        self.addressBar = QLineEdit()
+        self.addressBar.setPlaceholderText('Search with Google or enter address')
+        
         self.createBrowser()
         
         tb = self.addToolBar("File")
@@ -32,9 +36,6 @@ class MainWindow(QMainWindow):
         self.homeAction = QAction(QIcon('home.png'), 'Home', self)
         self.homeAction.setShortcut('Ctrl+H')
         self.homeAction.triggered.connect(self.browser.page.homeButtonPush)
-        
-        self.addressBar = QLineEdit()
-        self.addressBar.setPlaceholderText('Search with Google or enter address')
         
         self.goAction = QAction(QIcon('search.png'), 'Go', self)
         self.goAction.setShortcut(Qt.Key_Return)
@@ -112,7 +113,7 @@ class Window(QGraphicsScene):
         self.tabs.setTabsClosable(True)
         self.tabs.currentChanged.connect(self.currentTabChanged)
         self.tabs.tabCloseRequested.connect(self.closeCurrentTab)
-      
+        
         self.addNewTab()
     
         button = QPushButton(QIcon('plus.png'), '')
@@ -123,7 +124,6 @@ class Window(QGraphicsScene):
         self.setBackgroundBrush(QBrush(QColor(230, 230, 230), Qt.SolidPattern))
         
         self.searchHistory = self.tabs.currentWidget().page().history()
-
         _layout.addWidget(self.tabs)
 
     def addNewTab(self):
@@ -137,7 +137,7 @@ class Window(QGraphicsScene):
         i = self.tabs.addTab(web, "Google")
 
         self.tabs.setCurrentIndex(i)
-
+        
         web.urlChanged.connect(lambda qurl, web=web: self.update_urlbar(qurl, web))
         web.loadFinished.connect(lambda _, i=i, web=web: self.tabs.setTabText(i, web.title()))
 
@@ -146,7 +146,7 @@ class Window(QGraphicsScene):
         if browser != self.tabs.currentWidget():
             return
 
-        #addressBar.setText(q.toString()) TODO Dohvatiti addressBar iz toolbara. Ne znam kako da dohvatim
+        self.parent().parent().addressBar.setText(q.toString()) 
 
     def currentTabChanged(self, i):
         qurl = self.tabs.currentWidget().url()
