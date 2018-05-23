@@ -26,12 +26,12 @@ It was made on Ubuntu for Ubuntu.
 ***
 ## Meta
 
-Lazar Bojanic
-[@Linkedin](https://www.linkedin.com/in/lbojanic/)
-lazar.bojanic@hotmail.rs
-[https://github.com/LBojanic](https://github.com/LBojanic)
-
-Djordje Dimovic 
-[@Linkedin](https://www.linkedin.com/in/dimovicd/)
-dimovicdj@gmail.com
+Lazar Bojanic<br>
+[@Linkedin](https://www.linkedin.com/in/lbojanic/)<br>
+lazar.bojanic@hotmail.rs<br>
+[https://github.com/LBojanic](https://github.com/LBojanic)<br>
+<br>
+Djordje Dimovic <br>
+[@Linkedin](https://www.linkedin.com/in/dimovicd/)<br>
+dimovicdj@gmail.com<br>
 [https://github.com/dimovicdj](https://github.com/dimovicdj)
