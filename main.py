@@ -74,10 +74,10 @@ class MainWindow(QMainWindow):
         
     def closeEvent(self, event):  
         
-        file = open('history.txt', 'a+')
+        file = open('history.txt', 'a+', encoding='utf-8')
         
         for i in self.browser.page.searchHistory.items():
-            file.write(''.join((i.title(), ';', i.originalUrl().toString(), '\n')).encode('utf-8'))
+            file.write((i.title() + ';' + i.originalUrl().toString() + '\n'))
             
         file.close()
         
@@ -224,8 +224,6 @@ class Window(QGraphicsScene):
         menuItem = self.historyRightClickMenu.addAction('Bookmark page')
         menuItem.triggered.connect(self.addBookmarkFromHistory)
         
-        menuItem = self.historyRightClickMenu.addAction('Delete page')
-        menuItem.triggered.connect(self.deleteHistory)
         
         self.popUp.customContextMenuRequested.connect(self.showHistoryRightClickMenu)
     
@@ -251,7 +249,7 @@ class Window(QGraphicsScene):
         
     
     def openHistory(self):
-        list = item.text().split('  -  ')
+        list = self.item.text().split('  -  ')
         self.tabs.currentWidget().load(QUrl(list[1]))
         
         print(list[1])
@@ -275,19 +273,6 @@ class Window(QGraphicsScene):
         
         self.popUp.close()
         
-    def deleteHistory(self):
-        file = open('history.txt', 'r')
-        
-        lines = file.readlines()
-        file.close()
-        file = open('history.txt', 'w')
-        for line in lines:
-            list = line.split(';')
-            if(list[0].strip() != self.item.text().strip()):
-                file.write(line)
-        self.item.setHidden(True)
-    
-        file.close()
         
     def addBookmarkFromHistory(self):
         self.popUp = QDialog()
