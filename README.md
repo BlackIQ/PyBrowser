@@ -29,9 +29,9 @@ It was made on Ubuntu for Ubuntu.
 Lazar Bojanic<br>
 [@Linkedin](https://www.linkedin.com/in/lbojanic/)<br>
 lazar.bojanic@hotmail.rs<br>
-[GitHub](https://github.com/LBojanic)<br>
+[@GitHub](https://github.com/LBojanic)<br>
 <br>
 Djordje Dimovic <br>
 [@Linkedin](https://www.linkedin.com/in/dimovicd/)<br>
 dimovicdj@gmail.com<br>
-[GitHub](https://github.com/dimovicdj)
+[@GitHub](https://github.com/dimovicdj)
