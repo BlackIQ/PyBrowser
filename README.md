@@ -21,7 +21,7 @@ It was made on Ubuntu for Ubuntu.
     ```
 3. Run
     ```sh
-    python main.py 
+    python3 main.py 
     ```
 ***
 ## Meta
