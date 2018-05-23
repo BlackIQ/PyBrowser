@@ -230,6 +230,7 @@ class Window(QGraphicsScene):
         self.popUp.customContextMenuRequested.connect(self.showHistoryRightClickMenu)
     
     def deleteAllHistory(self):
+        self.searchHistory.clear()
         file = open('history.txt', 'r')
         
         lines = file.readlines()
