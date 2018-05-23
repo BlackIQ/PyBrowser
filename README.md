@@ -26,8 +26,12 @@ It was made on Ubuntu for Ubuntu.
 ***
 ## Meta
 
-Lazar Bojanic – [@Linkedin](https://www.linkedin.com/in/lbojanic/) – lazar.bojanic@hotmail.rs
+Lazar Bojanic
+[@Linkedin](https://www.linkedin.com/in/lbojanic/)
+lazar.bojanic@hotmail.rs
 [https://github.com/LBojanic](https://github.com/LBojanic)
 
-Djordje Dimovic – [@Linkedin](https://www.linkedin.com/in/dimovicd/) – dimovicdj@gmail.com
+Djordje Dimovic 
+[@Linkedin](https://www.linkedin.com/in/dimovicd/)
+dimovicdj@gmail.com
 [https://github.com/dimovicdj](https://github.com/dimovicdj)
