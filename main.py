@@ -77,8 +77,8 @@ class MainWindow(QMainWindow):
         
         file = open('history.txt', 'a+', encoding='utf-8')
         
-        for i in self.browser.page.searchHistory.items():
-            file.write((i.title() + ';' + i.originalUrl().toString() + '\n'))
+        for i in self.browser.page.searchedHistory:
+            file.write((i + '\n'))
             
         file.close()
         
@@ -114,6 +114,8 @@ class Window(QGraphicsScene):
         self.tabs.currentChanged.connect(self.currentTabChanged)
         self.tabs.tabCloseRequested.connect(self.closeCurrentTab)
         
+        self.searchedHistory = []
+        self.searchHistory = {}
         self.addNewTab()
     
         button = QPushButton(QIcon('plus.png'), '')
@@ -123,7 +125,6 @@ class Window(QGraphicsScene):
 
         self.setBackgroundBrush(QBrush(QColor(230, 230, 230), Qt.SolidPattern))
         
-        self.searchHistory = self.tabs.currentWidget().page().history()
         _layout.addWidget(self.tabs)
 
     def addNewTab(self):
@@ -140,6 +141,18 @@ class Window(QGraphicsScene):
         
         web.urlChanged.connect(lambda qurl, web=web: self.update_urlbar(qurl, web))
         web.loadFinished.connect(lambda _, i=i, web=web: self.tabs.setTabText(i, web.title()))
+        web.loadFinished.connect(lambda _, qurl=qurl, web=web: self.addToHistory(web.title(), web.url().toString()))
+        
+        self.searchHistory[str(i)] = self.tabs.currentWidget().page().history()
+        
+    def addToHistory(self, title, link):
+           
+        if(len(self.searchedHistory) == 0):
+            self.searchedHistory.append(''.join((title, ';', link)))
+            return
+           
+        if(self.searchedHistory[-1] != ''.join((title, ';', link))):
+            self.searchedHistory.append(''.join((title, ';', link)))
 
     def update_urlbar(self, q, browser=None):
 
@@ -179,10 +192,11 @@ class Window(QGraphicsScene):
             
         file.close()
         
-        for h in self.searchHistory.items():
-            url = h.originalUrl()
+        for line in self.searchedHistory:
+            list = line.split(';')
+            url = QUrl(list[1])
             icon = QWebSettings.iconForUrl(url)
-            self.popUp.addItem(QListWidgetItem(icon, h.title() + '  -  ' + url.toString()))
+            self.popUp.addItem(QListWidgetItem(icon, list[0].strip() + '  -  ' + list[1].strip()))
             
         self.popUp.setWindowTitle('History')
         self.popUp.setMinimumSize(400, 400)
@@ -228,7 +242,7 @@ class Window(QGraphicsScene):
         self.popUp.customContextMenuRequested.connect(self.showHistoryRightClickMenu)
     
     def deleteAllHistory(self):
-        self.searchHistory.clear()
+        self.searchedHistory = []
         file = open('history.txt', 'r')
         
         lines = file.readlines()
@@ -469,10 +483,10 @@ class Window(QGraphicsScene):
         
 
     def forwardButtonPush(self):
-        self.searchHistory.forward()
+        self.searchHistory[str(self.tabs.currentIndex())].forward()
         
     def backButtonPush(self):
-        self.searchHistory.back()
+        self.searchHistory[str(self.tabs.currentIndex())].back()
 
     def refreshButtonPush(self):
         self.tabs.currentWidget().reload()
