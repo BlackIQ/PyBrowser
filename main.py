@@ -180,7 +180,14 @@ class Window(QGraphicsScene):
         self.tabs.removeTab(i) 
 # History Button
     def historyButtonPush(self):
-        self.popUp = QListWidget()
+        self.popUp = QWidget()
+            
+        self.popUp.setWindowTitle('History')
+        self.popUp.setMinimumSize(400, 400)
+        
+        layout = QVBoxLayout()
+        
+        self.list = QListWidget()
         
         file = open('history.txt', 'r')
         
@@ -188,7 +195,7 @@ class Window(QGraphicsScene):
             list = line.split(';')
             url = QUrl(list[1])
             icon = QWebSettings.iconForUrl(url)
-            self.popUp.addItem(QListWidgetItem(icon, list[0].strip() + '  -  ' + list[1].strip()))
+            self.list.addItem(QListWidgetItem(icon, list[0].strip() + '  -  ' + list[1].strip()))
             
         file.close()
         
@@ -196,21 +203,19 @@ class Window(QGraphicsScene):
             list = line.split(';')
             url = QUrl(list[1])
             icon = QWebSettings.iconForUrl(url)
-            self.popUp.addItem(QListWidgetItem(icon, list[0].strip() + '  -  ' + list[1].strip()))
-            
-        self.popUp.setWindowTitle('History')
-        self.popUp.setMinimumSize(400, 400)
+            self.list.addItem(QListWidgetItem(icon, list[0].strip() + '  -  ' + list[1].strip()))
         
         button = QPushButton('Delete History')
         button.clicked.connect(self.deleteAllHistory)
         
         layout = QVBoxLayout()
+        layout.addWidget(self.list)
         layout.addWidget(button)
-        layout.setAlignment(Qt.AlignBottom)
         self.popUp.setLayout(layout)
         
-        self.popUp.itemActivated.connect(self.doubleClickHistory)
-        self.popUp.itemClicked.connect(self.showHistoryRightClick)
+        self.list.itemActivated.connect(self.doubleClickHistory)
+        self.list.itemClicked.connect(self.showHistoryRightClick)
+        
         self.popUp.show()
         
     def doubleClickHistory(self, item):
@@ -324,7 +329,12 @@ class Window(QGraphicsScene):
 # Bookmark Button
         
     def bookmarksButtonPush(self):
-        self.popUp = QListWidget()
+        self.popUp = QWidget()
+        
+        self.popUp.setWindowTitle('Bookmarks')
+        self.popUp.setMinimumSize(400, 400)
+        
+        self.list = QListWidget()
         
         file = open('bookmarks.txt', 'r')
         
@@ -332,19 +342,21 @@ class Window(QGraphicsScene):
             list = line.split(';')
             url = QUrl(list[1])
             icon = QWebSettings.iconForUrl(url)
-            self.popUp.addItem(QListWidgetItem(icon, list[0].strip()))
+            self.list.addItem(QListWidgetItem(icon, list[0].strip()))
         
+        file.close()
         
-        self.popUp.setWindowTitle('Bookmarks')
-        self.popUp.setMinimumSize(400, 400)
+        layout = QVBoxLayout()
+        layout.addWidget(self.list)
         
-        self.popUp.itemClicked.connect(self.showBookmarkRightClick)
+        self.popUp.setLayout(layout)
         
-        self.popUp.itemActivated.connect(self.doubleClickBookmark)
+        self.list.itemClicked.connect(self.showBookmarkRightClick)
+        
+        self.list.itemActivated.connect(self.doubleClickBookmark)
         
         self.popUp.show()
         
-        file.close()
         
         
     def doubleClickBookmark(self, item):
