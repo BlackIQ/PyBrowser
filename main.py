@@ -8,8 +8,8 @@ from PyQt5.QtWebKitWidgets import *
 
 class MainWindow(QMainWindow):
     def __init__(self, parent=None):
-        super(MainWindow, self).__init__(parent)
-        self.setGeometry(10, 10, 1000, 800)
+        super(MainWindow, self).__init__(parent) #super(subClass, instance).__init__(parent)
+        self.setGeometry(10, 10, 1000, 800) #setGeometry(topLeftX, topLeftY, width, height)
         
         self.setWindowTitle('Browser')
         self.setWindowIcon(QIcon('web.png'))
@@ -17,8 +17,9 @@ class MainWindow(QMainWindow):
         self.addressBar = QLineEdit()
         self.addressBar.setPlaceholderText('Search with Google or enter address')
         
-        self.createBrowser()
+        self.createBrowser() # Method that creates graphics view 
         
+        #---------------------Toolbar buttons section-----------------------
         tb = self.addToolBar("File")
         tb.setMovable(False)
         self.backAction = QAction(QIcon('back.png'), 'Back', self)
@@ -75,16 +76,17 @@ class MainWindow(QMainWindow):
         
     def closeEvent(self, event):  
         
-        file = open('history.txt', 'a+', encoding='utf-8')
+        file = open('history.txt', 'a+', encoding='utf-8') # a+ mode opens in read+write, appending to end of file and creating file if it doesn't exist
         
-        for i in self.browser.page.searchedHistory:
+        
+        for i in self.browser.page.history:
             file.write((i + '\n'))
             
         file.close()
         
         reply = QMessageBox.question(self, 'Confirm close',
         "You are about to exit. Are you sure you want to continue?", QMessageBox.Yes | 
-        QMessageBox.No, QMessageBox.Yes)
+        QMessageBox.No, QMessageBox.Yes) # parent, title, message, buttons, default button
 
         if reply == QMessageBox.Yes:
             event.accept()
@@ -109,21 +111,20 @@ class Window(QGraphicsScene):
 
         self.view = view
         self.tabs = QTabWidget()
-        self.tabs.resize(300,200)
         self.tabs.setTabsClosable(True)
         self.tabs.currentChanged.connect(self.currentTabChanged)
         self.tabs.tabCloseRequested.connect(self.closeCurrentTab)
         
-        self.searchedHistory = []
-        self.searchHistory = {}
+        self.history = [] # list of strings, string = "title;URL" needed for writing history in a file
+        self.historyForEachTab = {} # key = tabIndex, value = tabIndexHistory - needed for back and forward methods
         self.addNewTab()
     
         button = QPushButton(QIcon('plus.png'), '')
         button.setStatusTip('Open a new tab')
-        button.clicked.connect(lambda _: self.addNewTab()) 
+        button.clicked.connect(self.addNewTab) 
         self.tabs.setCornerWidget(button, Qt.TopLeftCorner)
 
-        self.setBackgroundBrush(QBrush(QColor(230, 230, 230), Qt.SolidPattern))
+        self.setBackgroundBrush(QBrush(QColor(230, 230, 230)))
         
         _layout.addWidget(self.tabs)
 
@@ -133,7 +134,6 @@ class Window(QGraphicsScene):
 
         web = QWebView()
         web.load(QUrl("https://www.google.com"))
-        web.setMinimumHeight(qApp.primaryScreen().size().height()-160)
 
         i = self.tabs.addTab(web, "Google")
 
@@ -143,16 +143,16 @@ class Window(QGraphicsScene):
         web.loadFinished.connect(lambda _, i=i, web=web: self.tabs.setTabText(i, web.title()))
         web.loadFinished.connect(lambda _, qurl=qurl, web=web: self.addToHistory(web.title(), web.url().toString()))
         
-        self.searchHistory[str(i)] = self.tabs.currentWidget().page().history()
+        self.historyForEachTab[i] = self.tabs.currentWidget().page().history()
         
     def addToHistory(self, title, link):
            
-        if(len(self.searchedHistory) == 0):
-            self.searchedHistory.append(''.join((title, ';', link)))
+        if(len(self.history) == 0):
+            self.history.append(''.join((title, ';', link)))
             return
            
-        if(self.searchedHistory[-1] != ''.join((title, ';', link))):
-            self.searchedHistory.append(''.join((title, ';', link)))
+        if(self.history[-1] != ''.join((title, ';', link))):
+            self.history.append(''.join((title, ';', link)))
 
     def update_urlbar(self, q, browser=None):
 
@@ -194,16 +194,14 @@ class Window(QGraphicsScene):
         for line in file:
             list = line.split(';')
             url = QUrl(list[1])
-            icon = QWebSettings.iconForUrl(url)
-            self.list.addItem(QListWidgetItem(icon, list[0].strip() + '  -  ' + list[1].strip()))
+            self.list.addItem(QListWidgetItem(list[0].strip() + '  -  ' + list[1].strip()))
             
         file.close()
         
-        for line in self.searchedHistory:
+        for line in self.history:
             list = line.split(';')
             url = QUrl(list[1])
-            icon = QWebSettings.iconForUrl(url)
-            self.list.addItem(QListWidgetItem(icon, list[0].strip() + '  -  ' + list[1].strip()))
+            self.list.addItem(QListWidgetItem(list[0].strip() + '  -  ' + list[1].strip()))
         
         button = QPushButton('Delete History')
         button.clicked.connect(self.deleteAllHistory)
@@ -214,7 +212,7 @@ class Window(QGraphicsScene):
         self.popUp.setLayout(layout)
         
         self.list.itemActivated.connect(self.doubleClickHistory)
-        self.list.itemClicked.connect(self.showHistoryRightClick)
+        self.list.itemClicked.connect(self.leftClickOnHistoryListElement)
         
         self.popUp.show()
         
@@ -222,11 +220,9 @@ class Window(QGraphicsScene):
         list = item.text().split('  -  ')
         self.tabs.currentWidget().load(QUrl(list[1]))
         
-        print(list[1])
-        
         self.popUp.close()
     
-    def showHistoryRightClick(self, item):
+    def leftClickOnHistoryListElement(self, item):
         
         self.popUp.setContextMenuPolicy(Qt.CustomContextMenu)
         
@@ -247,7 +243,7 @@ class Window(QGraphicsScene):
         self.popUp.customContextMenuRequested.connect(self.showHistoryRightClickMenu)
     
     def deleteAllHistory(self):
-        self.searchedHistory = []
+        self.history = []
         file = open('history.txt', 'r')
         
         lines = file.readlines()
@@ -289,7 +285,7 @@ class Window(QGraphicsScene):
 
         web.urlChanged.connect(lambda qurl, web=web: self.update_urlbar(qurl, web))
         web.loadFinished.connect(lambda _, i=i, web=web: self.tabs.setTabText(i, web.title()))
-        
+        web.loadFinished.connect(lambda _, qurl=qurl, web=web: self.addToHistory(web.title(), web.url().toString()))
         self.popUp.close()
         
         
@@ -312,18 +308,6 @@ class Window(QGraphicsScene):
         
         self.popUp.show()
         
-    def bookmarkPage(self):
-        file = open('bookmarks.txt', 'a+')
-        
-        list = item.text().split('  -  ')
-        for line in file:
-            if(list[0] == self.add.text()):
-                return
-        
-        if(self.add.text().strip() != ''):
-            file.write(''.join((self.add.text().strip(), ';', list[1].strip(), '\n')).encode('utf-8'))
-            
-        file.close()
 #############################################
 
 # Bookmark Button
@@ -341,8 +325,7 @@ class Window(QGraphicsScene):
         for line in file:
             list = line.split(';')
             url = QUrl(list[1])
-            icon = QWebSettings.iconForUrl(url)
-            self.list.addItem(QListWidgetItem(icon, list[0].strip()))
+            self.list.addItem(QListWidgetItem(list[0].strip()))
         
         file.close()
         
@@ -351,7 +334,7 @@ class Window(QGraphicsScene):
         
         self.popUp.setLayout(layout)
         
-        self.list.itemClicked.connect(self.showBookmarkRightClick)
+        self.list.itemClicked.connect(self.leftClickOnBookmarkListElement)
         
         self.list.itemActivated.connect(self.doubleClickBookmark)
         
@@ -373,7 +356,7 @@ class Window(QGraphicsScene):
         file.close()
         self.popUp.close()
         
-    def showBookmarkRightClick(self, item):
+    def leftClickOnBookmarkListElement(self, item):
         
         self.popUp.setContextMenuPolicy(Qt.CustomContextMenu)
         
@@ -471,14 +454,14 @@ class Window(QGraphicsScene):
         
         self.popUp.setLayout(layout)
         
-        button.clicked.connect(self.addBokmark)
+        button.clicked.connect(self.saveBookmark)
         
         self.popUp.setWindowTitle('Page Bookmarked')
         self.popUp.setMaximumSize(300, 200)
         
         self.popUp.show()
 
-    def addBokmark(self):
+    def saveBookmark(self):
         file = open('bookmarks.txt', 'a+')
         
         for line in file:
@@ -495,10 +478,10 @@ class Window(QGraphicsScene):
         
 
     def forwardButtonPush(self):
-        self.searchHistory[str(self.tabs.currentIndex())].forward()
+        self.historyForEachTab[self.tabs.currentIndex()].forward()
         
     def backButtonPush(self):
-        self.searchHistory[str(self.tabs.currentIndex())].back()
+        self.historyForEachTab[self.tabs.currentIndex()].back()
 
     def refreshButtonPush(self):
         self.tabs.currentWidget().reload()
