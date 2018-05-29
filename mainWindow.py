@@ -1,12 +1,13 @@
 from browser import *
 
 class MainWindow(QMainWindow):
-    def __init__(self, parent=None):
+    def __init__(self,parent=None):
         super(MainWindow, self).__init__(parent) #super(subClass, instance).__init__(parent)
         self.setGeometry(10, 10, 1000, 800) #setGeometry(topLeftX, topLeftY, width, height)
         
         self.setWindowTitle('Browser')
         self.setWindowIcon(QIcon('web.png'))
+        
 
         self.addressBar = QLineEdit()
         self.addressBar.setPlaceholderText('Search with Google or enter address')

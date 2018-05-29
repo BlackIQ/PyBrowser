@@ -207,23 +207,33 @@ class Window(QGraphicsScene):
         
         
     def addBookmarkFromHistory(self):
+        list = self.item.text().split('  -  ')
+        print list[0]
         self.popUp = QDialog()
         layout = QVBoxLayout()
         
         button = QPushButton('Done')
         self.add = QLineEdit()
+        self.add.setPlaceholderText('Name')
+        self.inCategory = QLineEdit()
+        self.inCategory.setPlaceholderText('Folder')
         
+        layout.addWidget(self.inCategory)
         layout.addWidget(self.add)
         layout.addWidget(button)
         
         self.popUp.setLayout(layout)
         
-        button.clicked.connect(self.addBokmark)
+        button.clicked.connect(lambda _, title=list[0] , url=list[1]  : self.saveBookmark(title, url))
         
         self.popUp.setWindowTitle('Page Bookmarked')
         self.popUp.setMaximumSize(300, 200)
         
         self.popUp.show()
+        
+        
+        
+        
         
 #############################################
 
@@ -404,7 +414,15 @@ class Window(QGraphicsScene):
         
         self.popUp.show()
 
-    def saveBookmark(self):
+    def saveBookmark(self, title = None, url = None):
+        
+        if(url is None):
+            qtitle = self.add.text().strip()
+            qurl = self.tabs.currentWidget().url().toString().strip()
+        else:
+            qtitle = title
+            qurl = url
+        
         file = open('bookmarks.json', 'r')
         
         categories = json.load(file)
@@ -424,10 +442,10 @@ class Window(QGraphicsScene):
         for category in categories:
             if(category['name'].strip() == self.inCategory.text().strip()):
                 s = 1
-                category['elements'][self.add.text().strip()] = self.tabs.currentWidget().url().toString()
-                
+                category['elements'][qtitle] = qurl
+        
         if(s == 0):
-            categories.append({'name':self.inCategory.text().strip(), 'elements':{self.add.text().strip():self.tabs.currentWidget().url().toString().strip()}})
+            categories.append({'name':self.inCategory.text().strip(), 'elements':{qtitle:qurl}})
             
         json.dump(categories, file)
         
