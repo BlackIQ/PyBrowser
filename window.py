@@ -1,4 +1,5 @@
 import sys
+import json
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
@@ -77,8 +78,18 @@ class Window(QGraphicsScene):
         self.view.parent().setWindowTitle(title)
 
     def closeCurrentTab(self, i):
+        
+        print i
         if self.tabs.count() < 2:
             return
+        
+        for j in range(i, self.tabs.count() - 1):
+            self.historyForEachTab[j] = self.historyForEachTab[j+1]
+            
+        for j in range(i, self.tabs.count()):
+            self.tabs.widget(j).loadFinished.disconnect()
+            self.tabs.widget(j).loadFinished.connect(lambda _, i=j-1, web=self.tabs.widget(j): self.tabs.setTabText(i, web.title()))
+            self.tabs.widget(j).loadFinished.connect(lambda _, web=self.tabs.widget(j): self.addToHistory(web.title(), web.url().toString()))
 
         self.tabs.removeTab(i) 
 # History Button
@@ -188,7 +199,10 @@ class Window(QGraphicsScene):
 
         web.urlChanged.connect(lambda qurl, web=web: self.update_urlbar(qurl, web))
         web.loadFinished.connect(lambda _, i=i, web=web: self.tabs.setTabText(i, web.title()))
-        web.loadFinished.connect(lambda _, qurl=qurl, web=web: self.addToHistory(web.title(), web.url().toString()))
+        web.loadFinished.connect(lambda _, web=web: self.addToHistory(web.title(), web.url().toString()))
+        
+        self.historyForEachTab[i] = self.tabs.currentWidget().page().history()
+        
         self.popUp.close()
         
         
@@ -223,12 +237,14 @@ class Window(QGraphicsScene):
         
         self.list = QListWidget()
         
-        file = open('bookmarks.txt', 'r')
+        file = open('bookmarks.json', 'r')
         
-        for line in file:
-            list = line.split(';')
-            url = QUrl(list[1])
-            self.list.addItem(QListWidgetItem(list[0].strip()))
+        categories = json.load(file)
+        
+        for category in categories:
+            self.list.addItem(QListWidgetItem('- - - - - ' + category['name'] + ' folder - - - - -'))
+            for (name, link) in category['elements'].items():
+                self.list.addItem(QListWidgetItem(name.strip()))
         
         file.close()
         
@@ -246,18 +262,19 @@ class Window(QGraphicsScene):
         
         
     def doubleClickBookmark(self, item):
-        file = open('bookmarks.txt', 'r')
+        file = open('bookmarks.json', 'r')
         
-        for line in file:
-            list = line.split(';')
-            if(list[0].strip() == item.text().strip()):
-                q = QUrl(list[1].strip())
+        categories = json.load(file)
+        
+        for category in categories:
+            if(item.text().strip() in category['elements']):
+                q = QUrl(category['elements'][item.text().strip()].strip())
                 if(q.scheme() == ""):
                     q.setScheme("http")
                 self.tabs.currentWidget().load(q)
+                self.popUp.close()
     
         file.close()
-        self.popUp.close()
         
     def leftClickOnBookmarkListElement(self, item):
         
@@ -286,18 +303,23 @@ class Window(QGraphicsScene):
         
     def openBookmarkInNewTab(self):
         
-        file = open('bookmarks.txt', 'r')
+        file = open('bookmarks.json', 'r')
         
         global q
+        q = ''
+        categories = json.load(file)
         
-        for line in file:
-            list = line.split(';')
-            if(list[0].strip() == self.item.text().strip()):
-                q = QUrl(list[1].strip())
+        for category in categories:
+            if(self.item.text().strip() in category['elements']):
+                q = QUrl(category['elements'][self.item.text().strip()].strip())
                 if(q.scheme() == ""):
                     q.setScheme("http")
+                    self.popUp.close()
     
         file.close()
+        
+        if(q == ''):
+            return
         
         web = QWebView()
         web.load(q)
@@ -310,35 +332,49 @@ class Window(QGraphicsScene):
         web.urlChanged.connect(lambda qurl, web=web: self.update_urlbar(qurl, web))
         web.loadFinished.connect(lambda _, i=i, web=web: self.tabs.setTabText(i, web.title()))
         
-        self.popUp.close()
+        self.historyForEachTab[i] = self.tabs.currentWidget().page().history()
+        
         
     def openBookmark(self):
-        file = open('bookmarks.txt', 'r')
+        file = open('bookmarks.json', 'r')
         
-        for line in file:
-            list = line.split(';')
-            if(list[0].strip() == self.item.text().strip()):
-                q = QUrl(list[1].strip())
+        categories = json.load(file)
+        
+        for category in categories:
+            if(self.item.text().strip() in category['elements']):
+                q = QUrl(category['elements'][self.item.text().strip()].strip())
                 if(q.scheme() == ""):
                     q.setScheme("http")
                 self.tabs.currentWidget().load(q)
+                self.popUp.close()
     
         file.close()
         
-        self.popUp.close()
         
     def deleteBookmark(self):
-        file = open('bookmarks.txt', 'r')
+        file = open('bookmarks.json', 'r')
         
-        lines = file.readlines()
+        categories = json.load(file)
+        
         file.close()
-        file = open('bookmarks.txt', 'w')
-        for line in lines:
-            list = line.split(';')
-            if(list[0].strip() != self.item.text().strip()):
-                file.write(line)
-        self.item.setHidden(True)
-    
+        file = open('bookmarks.json', 'w+')
+        
+        delete = 0
+        element = ''
+        
+        for category in categories:
+            if(self.item.text() in category['elements']):
+                category['elements'].pop(self.item.text())
+                self.item.setHidden(True)
+                if(not category['elements']):
+                    delete = 1
+                    element = category
+        
+        if(delete == 1):
+            categories.pop(categories.index(element))
+                
+            
+        json.dump(categories, file)    
         file.close()
         
 #################################################
@@ -351,7 +387,11 @@ class Window(QGraphicsScene):
         
         button = QPushButton('Done')
         self.add = QLineEdit()
+        self.add.setPlaceholderText('Name')
+        self.inCategory = QLineEdit()
+        self.inCategory.setPlaceholderText('Folder')
         
+        layout.addWidget(self.inCategory)
         layout.addWidget(self.add)
         layout.addWidget(button)
         
@@ -365,17 +405,33 @@ class Window(QGraphicsScene):
         self.popUp.show()
 
     def saveBookmark(self):
-        file = open('bookmarks.txt', 'a+')
+        file = open('bookmarks.json', 'r')
         
-        for line in file:
-            list = line.split(';')
-            if(list[0] == self.add.text()):
+        categories = json.load(file)
+        
+        file.close()
+        
+        if(self.add.text().strip() == '' or self.inCategory.text().strip() == ''):
+            return
+        
+        for category in categories:
+            if(self.add.text() in category['elements']):
                 return
-        
-        if(self.add.text().strip() != ''):
-            file.write(self.add.text() + ';' + self.tabs.currentWidget().url().toString() + '\n')
-            self.popUp.close()
             
+        file = open('bookmarks.json', 'w+')
+        
+        s = 0
+        for category in categories:
+            if(category['name'].strip() == self.inCategory.text().strip()):
+                s = 1
+                category['elements'][self.add.text().strip()] = self.tabs.currentWidget().url().toString()
+                
+        if(s == 0):
+            categories.append({'name':self.inCategory.text().strip(), 'elements':{self.add.text().strip():self.tabs.currentWidget().url().toString().strip()}})
+            
+        json.dump(categories, file)
+        
+        self.popUp.close()
         file.close()
 ###########################################
         
