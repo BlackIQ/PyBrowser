@@ -31,6 +31,12 @@ class Window(QGraphicsScene):
         self.setBackgroundBrush(QBrush(QColor(230, 230, 230)))
         
         _layout.addWidget(self.tabs)
+        
+        file = open('history.txt', 'r')
+        
+        self.lines = file.readlines()
+            
+        file.close()
 
     def addNewTab(self):
 
@@ -79,7 +85,7 @@ class Window(QGraphicsScene):
 
     def closeCurrentTab(self, i):
         
-        print i
+        print(i)
         if self.tabs.count() < 2:
             return
         
@@ -103,14 +109,10 @@ class Window(QGraphicsScene):
         
         self.list = QListWidget()
         
-        file = open('history.txt', 'r')
-        
-        for line in file:
+        for line in self.lines:
             list = line.split(';')
             url = QUrl(list[1])
             self.list.addItem(QListWidgetItem(list[0].strip() + '  -  ' + list[1].strip()))
-            
-        file.close()
         
         for line in self.history:
             list = line.split(';')
@@ -158,14 +160,9 @@ class Window(QGraphicsScene):
     
     def deleteAllHistory(self):
         self.history = []
-        file = open('history.txt', 'r')
-        
+        self.lines = []
+        file = open('history.txt', 'w+')
         lines = file.readlines()
-        file.close()
-        
-        file = open('history.txt', 'w')
-        for line in lines:
-            file.write('')
         file.close()
         
         self.popUp.close()
@@ -208,7 +205,7 @@ class Window(QGraphicsScene):
         
     def addBookmarkFromHistory(self):
         list = self.item.text().split('  -  ')
-        print list[0]
+        print(list[0])
         self.popUp = QDialog()
         layout = QVBoxLayout()
         
